@@ -31,11 +31,17 @@ in stdenv.mkDerivation {
 
   configurePhase = pkgs.elmPackages.fetchElmDeps {
     elmPackages = import ./elm-srcs.nix;
-    versionsDat = ./versions.dat;
+    elmVersion = "0.19.1";
+    #versionsDat = ./versions.dat;
+    registryDat = ./registry.dat;
   };
 
   installPhase = ''
-    mkdir -p $out
-    parcel build -d $out index.html
+    mkdir -p $out/web
+    cp src/index.html $out/web
+  '';
+
+  buildPhase = ''
+    elm make src/Main.elm --optimize --output=$out/web/main.js
   '';
 }
