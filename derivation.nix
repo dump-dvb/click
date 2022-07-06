@@ -39,6 +39,7 @@ in stdenv.mkDerivation {
   installPhase = ''
     mkdir -p $out/web
     cp src/index.html $out/web
+    cp -r src/js $out/web/js
   '';
 
   buildPhase = ''

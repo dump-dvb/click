@@ -1,5 +1,15 @@
 {
 
+      "GlobalWebIndex/cmd-extra" = {
+        sha256 = "107xl90169c0vhz1rig7xihsldj2w9y0b7mskgxzic91dvq23b7s";
+        version = "1.4.0";
+      };
+
+      "elm/json" = {
+        sha256 = "0kjwrz195z84kwywaxhhlnpl3p251qlbm5iz6byd6jky2crmyqyh";
+        version = "1.1.3";
+      };
+
       "billstclair/elm-websocket-client" = {
         sha256 = "1402rs1zlpf2aiw4z5d3cm7k3vi5jx7iw1qzb5n86x7m9yar2bm0";
         version = "4.1.0";
@@ -18,11 +28,6 @@
       "elm/core" = {
         sha256 = "19w0iisdd66ywjayyga4kv2p1v9rxzqjaxhckp8ni6n8i0fb2dvf";
         version = "1.0.5";
-      };
-
-      "elm/json" = {
-        sha256 = "0kjwrz195z84kwywaxhhlnpl3p251qlbm5iz6byd6jky2crmyqyh";
-        version = "1.1.3";
       };
 
       "Janiczek/cmd-extra" = {

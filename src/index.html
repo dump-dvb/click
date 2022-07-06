@@ -3,14 +3,32 @@
 	<meta charset="UTF-8">
 	<title>click</title>
 	<script src="main.js"></script>
+	<script type='text/javascript' src='js/PortFunnel.js'></script>
+	<script type='text/javascript' src='js/PortFunnel/WebSocket.js'></script>
 </head>
 
 <body>
 	<div id="myapp"></div>
-	<script>
-	var app = Elm.Main.init({
+	<script type='text/javascript'>
+	
+	// Initialize the name of your main module here.
+	// Change "Main" to your application's module name.
+	var mainModule = 'Main';
+	
+	// Change "PortExample" to your application's module name.
+	var app = Elm[mainModule].init({
 		node: document.getElementById('myapp')
 	});
+	
+	// These are the defaults, so you don't need to pass them.  If you
+	// need to use different port names, you can pass them as the
+	// 'portNames' property of the second parameter to
+	// PortFunnel.subscribe() below:
+	// var portNames = ['cmdPort', 'subPort'];
+	// PortFunnel.subscribe(app, { portNames: portNames });
+	
+	PortFunnel.subscribe(app);
+
 	</script>
 </body>
 </html>
