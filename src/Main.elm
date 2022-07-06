@@ -56,6 +56,8 @@ stateAccessor =
 
 parseResponse response =
   case response of
+    WebSocket.ListResponse list ->
+      List.map parseResponse list |> List.foldl (++) "list response!\n"
     WebSocket.ConnectedResponse body ->
       "connected! " ++ body.description
     WebSocket.ReconnectedResponse body ->
@@ -70,8 +72,27 @@ parseResponse response =
       "no response!"
     WebSocket.CmdResponse _ ->
       "cmd response!"
-    _ ->
-      "other result!"
+    WebSocket.ErrorResponse err ->
+      "error: " ++ parseError err
+
+parseError err =
+  case err of
+    WebSocket.SocketAlreadyOpenError _ ->
+      "SocketAlreadyOpenError"
+    WebSocket.SocketConnectingError _ ->
+      "SocketConnectingError"
+    WebSocket.SocketClosingError _ ->
+      "SocketClosingError"
+    WebSocket.SocketNotOpenError _ ->
+      "SocketNotOpenError"
+    WebSocket.LowLevelError _ ->
+      "LowLevelError"
+    WebSocket.UnexpectedConnectedError { key, description } ->
+      "UnexpectedConnectedError: " ++ description
+    WebSocket.UnexpectedMessageError { key, message } ->
+      "UnexpectedMessageError: " ++ message
+    WebSocket.InvalidMessageError { message } ->
+      "InvalidMessageError: " ++ (PortFunnel.messageToJsonString WebSocket.moduleDesc message)
 
 type Msg = Increment | Decrement | Login | Connect | Process Json.Encode.Value
 
