@@ -1,7 +1,7 @@
 port module Main exposing (..)
 
 import Browser
-import Html exposing (Html, button, div, text)
+import Html exposing (Html, button, div, text, br)
 import Html.Events exposing (onClick)
 import Json.Encode exposing (Value, encode)
 
@@ -42,6 +42,9 @@ port subPort : (Json.Encode.Value -> msg) -> Sub msg
 send model message =
   WebSocket.send cmdPort (WebSocket.makeSend model.key message)
 
+socketKey = "backend"
+socketURL = "wss://management-backend.staging.dvb.solutions"
+
 stateAccessor:
   { get: Model -> WebSocket.State
   , set: WebSocket.State -> Model -> Model
@@ -70,7 +73,7 @@ parseResponse response =
     _ ->
       "other result!"
 
-type Msg = Increment | Decrement | Login | Process Json.Encode.Value
+type Msg = Increment | Decrement | Login | Connect | Process Json.Encode.Value
 
 update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -95,9 +98,24 @@ update msg model =
         _ ->
           model |> withNoCmd
 
+    Connect ->
+      let
+          cmd = WebSocket.makeOpenWithKey socketKey socketURL
+            |> WebSocket.send cmdPort
+      in
+        (model, cmd)
+
     Login ->
       let
-          cmd = WebSocket.makeOpen "wss://management-backend.staging.dvb.solutions"
+          cmd = WebSocket.makeSend socketKey """
+                  {
+                      "operation": "user/login",
+                      "body": {
+                          "name": "test",
+                          "password": "test"
+                      }
+                  }
+                  """
             |> WebSocket.send cmdPort
       in
         (model, cmd)
@@ -112,7 +130,9 @@ update msg model =
 view: Model -> Html Msg
 view model =
   div []
-    [ button [ onClick Login ] [ text "Login" ]
+    [ button [ onClick Connect ] [ text "Connect" ]
+    , button [ onClick Login ] [ text "Login" ]
+    , br [] []
     , button [ onClick Decrement ] [ text "-" ]
     , div [] [ text (String.fromInt model.value) ]
     , button [ onClick Increment ] [ text "+" ]
