@@ -96,6 +96,12 @@ update msg model =
         Ok (newmodel, WebSocket.ConnectedResponse ms) ->
           { newmodel | isConnected = True } |> withNoCmd
 
+        Ok (newmodel, WebSocket.ReconnectedResponse ms) ->
+          { newmodel | isConnected = True } |> withNoCmd
+
+        Ok (newmodel, WebSocket.ClosedResponse ms) ->
+          { newmodel | isConnected = False } |> withNoCmd
+
         Ok (newmodel, WebSocket.CmdResponse ms) ->
           newmodel |> withCmd (WebSocket.send cmdPort ms)
 
