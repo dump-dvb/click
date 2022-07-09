@@ -30,6 +30,11 @@
         version = "1.0.2";
       };
 
+      "rtfeldman/elm-css" = {
+        sha256 = "0mffazjks3wmsn0f0xs8gs6zg39ahipz0hqif2y7qphzjdq6h6yh";
+        version = "17.1.1";
+      };
+
       "elm/core" = {
         sha256 = "19w0iisdd66ywjayyga4kv2p1v9rxzqjaxhckp8ni6n8i0fb2dvf";
         version = "1.0.5";
@@ -43,6 +48,16 @@
       "Janiczek/cmd-extra" = {
         sha256 = "11yh77y4v7dsx7bkhqyx4x0f2hxfz214ydmsp89amy8cnqrkbn5q";
         version = "1.1.0";
+      };
+
+      "robinheghan/murmur3" = {
+        sha256 = "15asmgr2zqh7rkywrg5647rpdqkpzxk02v5qc6ndj60jza3gsmjk";
+        version = "1.0.0";
+      };
+
+      "rtfeldman/elm-hex" = {
+        sha256 = "1y0aa16asvwdqmgbskh5iba6psp43lkcjjw9mgzj3gsrg33lp00d";
+        version = "1.0.0";
       };
 
       "elm/url" = {
