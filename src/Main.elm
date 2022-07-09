@@ -24,15 +24,13 @@ main =
   }
 
 type alias Model =
-  { value: Int
-  , websocket: WebSocket.State
+  { websocket: WebSocket.State
   , regions: List Region
   }
 
 init: () -> ( Model, Cmd Msg )
 init _ =
-  { value = 0
-  , websocket = WebSocket.initialState
+  { websocket = WebSocket.initialState
   , regions = []
   } |> withNoCmd
 
@@ -61,7 +59,7 @@ stateAccessor =
 
 
 
-type Msg = Increment | Decrement | Connect | Login | ListRegions | Process Json.Encode.Value
+type Msg = Connect | Login | ListRegions | Process Json.Encode.Value
 
 update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -127,12 +125,6 @@ update msg model =
       in
         (model, cmd)
 
-    Increment ->
-      { model | value = model.value + 1} |> withNoCmd
-
-    Decrement ->
-      { model | value = model.value - 1} |> withNoCmd
-
 
 renderRegion region =
   div []
@@ -148,10 +140,7 @@ view model =
     (
       [ button [ onClick Connect ] [ text "Connect" ]
       , button [ onClick Login ] [ text "Login" ]
-      , button [ onClick ListRegions ] [ text "List Regions" ]
       , br [] []
-      , button [ onClick Decrement ] [ text "-" ]
-      , div [] [ text (String.fromInt model.value) ]
-      , button [ onClick Increment ] [ text "+" ]
+      , button [ onClick ListRegions ] [ text "List Regions" ]
       ] ++ List.map renderRegion model.regions
     )
