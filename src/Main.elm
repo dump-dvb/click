@@ -9,8 +9,8 @@ import Html.Styled.Events exposing (onClick)
 
 import Render exposing (renderPanel)
 
-import Json.Encode exposing (Value, encode)
-import Json.Decode exposing (Decoder)
+import Json.Encode as Encode exposing (Value, encode)
+import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline as JDPipeline
 
 import PortFunnel exposing (decodeGenericMessage)
@@ -69,19 +69,31 @@ update msg model =
   case msg of
     Msg.Process value ->
       let
-          logIncoming = Debug.log "incoming to-process" (Json.Encode.encode 0 value)
-          result = PortFunnel.decodeGenericMessage value
-            |> Result.andThen (\gmessage ->
-                 PortFunnel.process stateAccessor WebSocket.moduleDesc gmessage model
-               )
-          logResponse = case result of
-            Ok (_, response) ->
-              Debug.log "response" (parseResponse response)
-            Err s ->
-              "cannot decode message: " ++ s
+        logIncoming = Debug.log "incoming to-process" <| Encode.encode 0 value
+        result = PortFunnel.decodeGenericMessage value
+          |> Result.andThen (\gmessage ->
+               PortFunnel.process stateAccessor WebSocket.moduleDesc gmessage model
+             )
+        logResponse = case result of
+          Ok (_, response) ->
+            Debug.log "response" (parseResponse response)
+          Err s ->
+            "cannot decode message: " ++ s
       in case result of
+        Ok (newmodel, WebSocket.NoResponse) ->
+          -- connect upon startup
+          let
+            tagResult = Decode.decodeValue (Decode.field "tag" Decode.string) value
+          in
+            case tagResult of
+              Ok "startup" ->
+                update Msg.Connect model
+              _ ->
+                model |> withNoCmd
+
         Ok (newmodel, WebSocket.CmdResponse ms) ->
           newmodel |> withCmd (WebSocket.send cmdPort ms)
+
         Ok (newmodel, WebSocket.MessageReceivedResponse { message }) ->
           case regionListDecoder message of
             Ok rl ->
@@ -90,8 +102,10 @@ update msg model =
               in {newmodel | regions = rl } |> withNoCmd
             _ ->
               newmodel |> withNoCmd
+
         Ok (newmodel, _) ->
           newmodel |> withNoCmd
+
         _ ->
           model |> withNoCmd
 
