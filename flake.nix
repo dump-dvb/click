@@ -13,9 +13,9 @@
         let
           pkgs = nixpkgs.legacyPackages.${system};
 
-          package = pkgs.callPackage ./derivation.nix { 
-              elm = pkgs.elmPackages.elm;
-              elm-format = pkgs.elmPackages.elm-format;
+          package = pkgs.callPackage ./derivation.nix {
+            elm = pkgs.elmPackages.elm;
+            elm-format = pkgs.elmPackages.elm-format;
           };
 
         in
@@ -25,7 +25,7 @@
           packages.default = package;
 
           devShells.default = pkgs.mkShell {
-          buildInputs = with pkgs.elmPackages;  [
+            buildInputs = with pkgs.elmPackages;  [
               elm
               elm-format
               #yarnPkg
@@ -37,10 +37,10 @@
           };
         }
       ) // {
-        overlays.default = final: prev: {
-          inherit (self.packages.${prev.system})
+      overlays.default = final: prev: {
+        inherit (self.packages.${prev.system})
           click;
-        };
+      };
 
       hydraJobs =
         let

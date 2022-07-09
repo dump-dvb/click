@@ -1,4 +1,4 @@
-{ pkgs, lib, pkg-config, stdenv, elm, elm-format, yarn}:
+{ pkgs, lib, pkg-config, stdenv, elm, elm-format, yarn }:
 let
   /*yarnPkg = pkgs.yarn2nix.mkYarnPackage {
     name = "myproject-node-packages";
@@ -7,11 +7,12 @@ let
     src = null;
     yarnLock = ./yarn.lock;
     publishBinsFor = ["parcel-bundler"];
-  }; */
-in stdenv.mkDerivation {
+    }; */
+in
+stdenv.mkDerivation {
   name = "click";
   src = pkgs.lib.cleanSource ./.;
-  
+
   #with pkgs.elmPackages; 
   buildInputs = [
     elm
