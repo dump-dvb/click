@@ -1,12 +1,19 @@
-port module Main exposing (..)
+module Main exposing (..)
 
 import Browser
-import Html exposing (Html, button, div, text, br)
+import Html exposing (Html, button, div, text, br, p)
 import Html.Events exposing (onClick)
 import Json.Encode exposing (Value, encode)
+import Json.Decode exposing (Decoder)
+import Json.Decode.Pipeline as JDPipeline
 
 import PortFunnel exposing (decodeGenericMessage)
 import PortFunnel.WebSocket as WebSocket
+
+import Messaging exposing (send, parseResponse)
+import Serialization exposing (Region, regionListDecoder)
+
+import Port exposing (cmdPort, subPort)
 
 main =
   Browser.element {
@@ -16,14 +23,18 @@ main =
     subscriptions = subscriptions
   }
 
-
 type alias Model =
   { value: Int
   , websocket: WebSocket.State
+  , regions: List Region
   }
 
 init: () -> ( Model, Cmd Msg )
-init _ = { value = 0, websocket = WebSocket.initialState } |> withNoCmd
+init _ =
+  { value = 0
+  , websocket = WebSocket.initialState
+  , regions = []
+  } |> withNoCmd
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
@@ -35,12 +46,6 @@ withCmd command model = (model, command)
 withNoCmd: Model -> (Model, Cmd msg)
 withNoCmd model = (model, Cmd.none)
 
-port cmdPort : Json.Encode.Value -> Cmd msg
-port subPort : (Json.Encode.Value -> msg) -> Sub msg
-
---send : Model -> WebSocket.Message -> Cmd Msg
-send model message =
-  WebSocket.send cmdPort (WebSocket.makeSend model.key message)
 
 socketKey = "backend"
 socketURL = "wss://management-backend.staging.dvb.solutions"
@@ -54,47 +59,9 @@ stateAccessor =
   , set = \state model -> { model | websocket = state}
   }
 
-parseResponse response =
-  case response of
-    WebSocket.ListResponse list ->
-      List.map parseResponse list |> List.foldl (++) "list response!\n"
-    WebSocket.ConnectedResponse body ->
-      "connected! " ++ body.description
-    WebSocket.ReconnectedResponse body ->
-      "reconnected! " ++ body.description
-    WebSocket.MessageReceivedResponse body ->
-      "received! " ++ body.message
-    WebSocket.ClosedResponse body ->
-      "closed! " ++ body.reason
-    WebSocket.BytesQueuedResponse _ ->
-      "bytes queued!"
-    WebSocket.NoResponse ->
-      "no response!"
-    WebSocket.CmdResponse _ ->
-      "cmd response!"
-    WebSocket.ErrorResponse err ->
-      "error: " ++ parseError err
 
-parseError err =
-  case err of
-    WebSocket.SocketAlreadyOpenError _ ->
-      "SocketAlreadyOpenError"
-    WebSocket.SocketConnectingError _ ->
-      "SocketConnectingError"
-    WebSocket.SocketClosingError _ ->
-      "SocketClosingError"
-    WebSocket.SocketNotOpenError _ ->
-      "SocketNotOpenError"
-    WebSocket.LowLevelError _ ->
-      "LowLevelError"
-    WebSocket.UnexpectedConnectedError { key, description } ->
-      "UnexpectedConnectedError: " ++ description
-    WebSocket.UnexpectedMessageError { key, message } ->
-      "UnexpectedMessageError: " ++ message
-    WebSocket.InvalidMessageError { message } ->
-      "InvalidMessageError: " ++ (PortFunnel.messageToJsonString WebSocket.moduleDesc message)
 
-type Msg = Increment | Decrement | Login | Connect | Process Json.Encode.Value
+type Msg = Increment | Decrement | Connect | Login | ListRegions | Process Json.Encode.Value
 
 update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -114,6 +81,14 @@ update msg model =
       in case result of
         Ok (newmodel, WebSocket.CmdResponse ms) ->
           newmodel |> withCmd (WebSocket.send cmdPort ms)
+        Ok (newmodel, WebSocket.MessageReceivedResponse { message }) ->
+          case regionListDecoder message of
+            Ok rl ->
+              let
+                log = Debug.log "regions" message
+              in {newmodel | regions = rl } |> withNoCmd
+            _ ->
+              newmodel |> withNoCmd
         Ok (newmodel, _) ->
           newmodel |> withNoCmd
         _ ->
@@ -141,6 +116,17 @@ update msg model =
       in
         (model, cmd)
 
+    ListRegions ->
+      let
+          cmd = WebSocket.makeSend socketKey """
+                  {
+                      "operation": "region/list"
+                  }
+                  """
+            |> WebSocket.send cmdPort
+      in
+        (model, cmd)
+
     Increment ->
       { model | value = model.value + 1} |> withNoCmd
 
@@ -148,13 +134,24 @@ update msg model =
       { model | value = model.value - 1} |> withNoCmd
 
 
+renderRegion region =
+  div []
+    [ p [] [
+      text ("#" ++ String.fromInt region.id ++ " " ++ region.name ++ " (" ++ region.transport_company ++ ")")
+      ]
+    ]
+
+
 view: Model -> Html Msg
 view model =
   div []
-    [ button [ onClick Connect ] [ text "Connect" ]
-    , button [ onClick Login ] [ text "Login" ]
-    , br [] []
-    , button [ onClick Decrement ] [ text "-" ]
-    , div [] [ text (String.fromInt model.value) ]
-    , button [ onClick Increment ] [ text "+" ]
-    ]
+    (
+      [ button [ onClick Connect ] [ text "Connect" ]
+      , button [ onClick Login ] [ text "Login" ]
+      , button [ onClick ListRegions ] [ text "List Regions" ]
+      , br [] []
+      , button [ onClick Decrement ] [ text "-" ]
+      , div [] [ text (String.fromInt model.value) ]
+      , button [ onClick Increment ] [ text "+" ]
+      ] ++ List.map renderRegion model.regions
+    )

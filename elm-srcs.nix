@@ -20,6 +20,11 @@
         version = "1.0.0";
       };
 
+      "billstclair/elm-port-funnel" = {
+        sha256 = "1l7yjq9wl5gdhvhlig3qk2w4z4hlf898gml7b105icajisysii00";
+        version = "1.2.0";
+      };
+
       "elm/browser" = {
         sha256 = "0nagb9ajacxbbg985r4k9h0jadqpp0gp84nm94kcgbr5sf8i9x13";
         version = "1.0.2";
@@ -30,14 +35,14 @@
         version = "1.0.5";
       };
 
+      "NoRedInk/elm-json-decode-pipeline" = {
+        sha256 = "1k241pjz1wj5rqv95f1j86msa0s0p6w4v8n0jn26aw6cbadw363b";
+        version = "1.0.1";
+      };
+
       "Janiczek/cmd-extra" = {
         sha256 = "11yh77y4v7dsx7bkhqyx4x0f2hxfz214ydmsp89amy8cnqrkbn5q";
         version = "1.1.0";
-      };
-
-      "billstclair/elm-port-funnel" = {
-        sha256 = "1l7yjq9wl5gdhvhlig3qk2w4z4hlf898gml7b105icajisysii00";
-        version = "1.2.0";
       };
 
       "elm/url" = {
@@ -53,11 +58,6 @@
       "elm/time" = {
         sha256 = "0vch7i86vn0x8b850w1p69vplll1bnbkp8s383z7pinyg94cm2z1";
         version = "1.0.0";
-      };
-
-      "NoRedInk/elm-json-decode-pipeline" = {
-        sha256 = "1k241pjz1wj5rqv95f1j86msa0s0p6w4v8n0jn26aw6cbadw363b";
-        version = "1.0.1";
       };
 
       "elm/virtual-dom" = {

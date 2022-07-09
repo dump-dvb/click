@@ -7,6 +7,7 @@
     "dependencies": {
         "direct": {
             "GlobalWebIndex/cmd-extra": "1.4.0",
+            "NoRedInk/elm-json-decode-pipeline": "1.0.1",
             "billstclair/elm-port-funnel": "1.2.0",
             "billstclair/elm-websocket-client": "4.1.0",
             "elm/browser": "1.0.2",
@@ -16,7 +17,6 @@
         },
         "indirect": {
             "Janiczek/cmd-extra": "1.1.0",
-            "NoRedInk/elm-json-decode-pipeline": "1.0.1",
             "elm/time": "1.0.0",
             "elm/url": "1.0.0",
             "elm/virtual-dom": "1.0.3",
