@@ -1,8 +1,14 @@
 module Main exposing (..)
 
+import Msg exposing (Msg)
+
 import Browser
-import Html exposing (Html, button, div, text, br, p)
-import Html.Events exposing (onClick)
+
+import Html.Styled as Html exposing (Html, button, div, text, br, p, table, thead, tbody, th, tr, td, h3)
+import Html.Styled.Events exposing (onClick)
+
+import Render exposing (renderPanel)
+
 import Json.Encode exposing (Value, encode)
 import Json.Decode exposing (Decoder)
 import Json.Decode.Pipeline as JDPipeline
@@ -19,7 +25,7 @@ main =
   Browser.element {
     init = init,
     update = update,
-    view = view,
+    view = view >> Html.toUnstyled,
     subscriptions = subscriptions
   }
 
@@ -36,7 +42,7 @@ init _ =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-  subPort Process
+  subPort Msg.Process
 
 withCmd: Cmd msg -> Model -> (Model, Cmd msg)
 withCmd command model = (model, command)
@@ -58,13 +64,10 @@ stateAccessor =
   }
 
 
-
-type Msg = Connect | Login | ListRegions | Process Json.Encode.Value
-
 update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    Process value ->
+    Msg.Process value ->
       let
           logIncoming = Debug.log "incoming to-process" (Json.Encode.encode 0 value)
           result = PortFunnel.decodeGenericMessage value
@@ -92,14 +95,14 @@ update msg model =
         _ ->
           model |> withNoCmd
 
-    Connect ->
+    Msg.Connect ->
       let
           cmd = WebSocket.makeOpenWithKey socketKey socketURL
             |> WebSocket.send cmdPort
       in
         (model, cmd)
 
-    Login ->
+    Msg.Login ->
       let
           cmd = WebSocket.makeSend socketKey """
                   {
@@ -114,7 +117,7 @@ update msg model =
       in
         (model, cmd)
 
-    ListRegions ->
+    Msg.ListRegions ->
       let
           cmd = WebSocket.makeSend socketKey """
                   {
@@ -125,22 +128,13 @@ update msg model =
       in
         (model, cmd)
 
-
-renderRegion region =
-  div []
-    [ p [] [
-      text ("#" ++ String.fromInt region.id ++ " " ++ region.name ++ " (" ++ region.transport_company ++ ")")
-      ]
-    ]
-
-
 view: Model -> Html Msg
 view model =
   div []
     (
-      [ button [ onClick Connect ] [ text "Connect" ]
-      , button [ onClick Login ] [ text "Login" ]
+      [ button [ onClick Msg.Connect ] [ text "Connect" ]
+      , button [ onClick Msg.Login ] [ text "Login" ]
       , br [] []
-      , button [ onClick ListRegions ] [ text "List Regions" ]
-      ] ++ List.map renderRegion model.regions
+      , div [] <| renderPanel model
+      ]
     )
