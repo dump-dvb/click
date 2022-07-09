@@ -2,4 +2,10 @@ module Msg exposing (..)
 
 import Json.Encode exposing (Value, encode)
 
-type Msg = Connect | Login | ListRegions | Process Json.Encode.Value
+type RequestType = ListRegions | ListStations
+
+type Msg =
+    Connect
+  | Login
+  | Request RequestType
+  | Process Json.Encode.Value

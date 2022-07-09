@@ -17,22 +17,20 @@ import PortFunnel exposing (decodeGenericMessage)
 import PortFunnel.WebSocket as WebSocket
 
 import Messaging exposing (send, parseResponse)
-import Serialization exposing (Region, regionListDecoder)
 
 import Port exposing (cmdPort, subPort)
 
-main =
-  Browser.element {
-    init = init,
-    update = update,
-    view = view >> Html.toUnstyled,
-    subscriptions = subscriptions
-  }
+import Requests exposing (performRequest)
+import Config exposing (socketKey, socketURL)
+import Model exposing (Model, expector)
 
-type alias Model =
-  { websocket: WebSocket.State
-  , isConnected: Bool
-  , regions: List Region
+
+main =
+  Browser.element
+  { init = init
+  , update = update
+  , view = view >> Html.toUnstyled
+  , subscriptions = subscriptions
   }
 
 init: () -> ( Model, Cmd Msg )
@@ -40,6 +38,8 @@ init _ =
   { websocket = WebSocket.initialState
   , isConnected = False
   , regions = []
+  , stations = []
+  , expect = Nothing
   } |> withNoCmd
 
 subscriptions : Model -> Sub Msg
@@ -52,9 +52,6 @@ withCmd command model = (model, command)
 withNoCmd: Model -> (Model, Cmd msg)
 withNoCmd model = (model, Cmd.none)
 
-
-socketKey = "backend"
-socketURL = "wss://management-backend.staging.dvb.solutions"
 
 stateAccessor:
   { get: Model -> WebSocket.State
@@ -106,11 +103,9 @@ update msg model =
           newmodel |> withCmd (WebSocket.send cmdPort ms)
 
         Ok (newmodel, WebSocket.MessageReceivedResponse { message }) ->
-          case regionListDecoder message of
-            Ok rl ->
-              let
-                log = Debug.log "regions" message
-              in {newmodel | regions = rl } |> withNoCmd
+          case model.expect of
+            Just (Model.Expector expect) ->
+              (Result.withDefault newmodel <| expect message <| newmodel) |> withNoCmd
             _ ->
               newmodel |> withNoCmd
 
@@ -142,16 +137,9 @@ update msg model =
       in
         (model, cmd)
 
-    Msg.ListRegions ->
-      let
-          cmd = WebSocket.makeSend socketKey """
-                  {
-                      "operation": "region/list"
-                  }
-                  """
-            |> WebSocket.send cmdPort
-      in
-        (model, cmd)
+    Msg.Request r ->
+      performRequest r model
+
 
 view: Model -> Html Msg
 view model =
