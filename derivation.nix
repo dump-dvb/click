@@ -43,6 +43,6 @@ in stdenv.mkDerivation {
   '';
 
   buildPhase = ''
-    elm make src/Main.elm --optimize --output=$out/web/main.js
+    elm make src/Main.elm --output=$out/web/main.js
   '';
 }
