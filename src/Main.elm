@@ -31,12 +31,14 @@ main =
 
 type alias Model =
   { websocket: WebSocket.State
+  , isConnected: Bool
   , regions: List Region
   }
 
 init: () -> ( Model, Cmd Msg )
 init _ =
   { websocket = WebSocket.initialState
+  , isConnected = False
   , regions = []
   } |> withNoCmd
 
@@ -90,6 +92,9 @@ update msg model =
                 update Msg.Connect model
               _ ->
                 model |> withNoCmd
+
+        Ok (newmodel, WebSocket.ConnectedResponse ms) ->
+          { newmodel | isConnected = True } |> withNoCmd
 
         Ok (newmodel, WebSocket.CmdResponse ms) ->
           newmodel |> withCmd (WebSocket.send cmdPort ms)
@@ -146,9 +151,12 @@ view: Model -> Html Msg
 view model =
   div []
     (
-      [ button [ onClick Msg.Connect ] [ text "Connect" ]
-      , button [ onClick Msg.Login ] [ text "Login" ]
-      , br [] []
-      , div [] <| renderPanel model
-      ]
+      if not model.isConnected
+      then
+        [ button [ onClick Msg.Connect ] [ text "Connect" ] ]
+      else
+        [ button [ onClick Msg.Login ] [ text "Login" ]
+        , br [] []
+        , div [] <| renderPanel model
+        ]
     )
