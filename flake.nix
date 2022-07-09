@@ -22,12 +22,9 @@
         rec {
           checks = packages;
           packages.click = package;
-          defaultPackage = package;
-          overlay = (final: prev: {
-            click = package;
-          });
+          packages.default = package;
 
-          devShells = pkgs.mkShell {
+          devShells.default = pkgs.mkShell {
           buildInputs = with pkgs.elmPackages;  [
               elm
               elm-format
@@ -40,6 +37,11 @@
           };
         }
       ) // {
+        overlays.default = final: prev: {
+          inherit (self.packages.${prev.system})
+          click;
+        };
+
       hydraJobs =
         let
           hydraSystems = [
