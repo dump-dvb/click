@@ -1,0 +1,6 @@
+# nix's build output
+result
+
+# elm's built artifact
+elm-stuff/
+src/main.js
