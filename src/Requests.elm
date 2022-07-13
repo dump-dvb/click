@@ -5,7 +5,7 @@ import Msg exposing (..)
 import Port exposing (cmdPort, subPort)
 import Serialization exposing (Region, regionListDecoder, Station, stationListDecoder)
 import Config exposing (socketKey, socketURL)
-import Model exposing (Model, expector)
+import Model exposing (Model, expector, makeModifyable)
 
 performRequest r model =
   case r of
@@ -29,12 +29,16 @@ performRequest r model =
                   """
             |> WebSocket.send cmdPort
       in
-        ({ model | expect = expector stationListDecoder storeStations }, cmd)
+        ({ model | expect = expector stationListDecoder storeNewStations }, cmd)
 
-storeRegions: List Region -> Model -> Model
-storeRegions rl model =
-  { model | regions = rl }
+storeRegions: Model -> List Region -> Model
+storeRegions model rl =
+  { model | regions = List.map makeModifyable rl }
 
-storeStations: List Station -> Model -> Model
-storeStations st model =
+storeNewStations: Model -> List Station -> Model
+storeNewStations model st =
+  storeStations model <| List.map makeModifyable st
+
+storeStations: Model -> List (Model.Modifyable Station) -> Model
+storeStations model st =
   { model | stations = st }

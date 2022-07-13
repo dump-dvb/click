@@ -140,6 +140,9 @@ update msg model =
     Msg.Request r ->
       performRequest r model
 
+    Msg.UpdateData fn ->
+      fn model |> withNoCmd
+
 
 view: Model -> Html Msg
 view model =
