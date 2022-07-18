@@ -9,7 +9,7 @@ import Html.Styled.Events exposing (onClick, onCheck, onInput)
 
 import Model exposing (Model, Modifyable, ModifyingState)
 import Requests exposing (storeRegions, storeStations)
-import Serialization exposing (stationDictEncoder, stationDictDecoder)
+import Serialization exposing (stationDictEncoder, stationDictDecoder, regionDictEncoder, regionDictDecoder)
 
 import Dict exposing (Dict)
 
@@ -54,35 +54,77 @@ renderRegions regions =
 
 -- TODO make editable
 renderRegion r =
-  tr [] <|
-    case r.state of
-      Model.Editing rd ->
-        let
-          region = r.value
-        in
-          [ td [ css [ cellStyle ] ] [ text <| String.fromInt region.id ]
-          , td [ css [ cellStyle ] ] [ text <| region.name ]
-          , td [ css [ cellStyle ] ] [ text <| region.transport_company ]
-          , td [ css [ cellStyle ] ] [ text <| String.fromInt region.frequency ]
-          , td [ css [ cellStyle ] ] [ text <| region.protocol ]
+  let
+    updateMessage key =
+      \value ->
+        Msg.UpdateData <| updateDictFnGenerator
+          .regions
+          storeRegions
+          (\region -> region.id == r.value.id)
+          key value
+    metaMessage updateMeta =
+      Msg.UpdateData <| updateMetaFnGenerator
+        .regions
+        storeRegions
+        (\region -> region.id == r.value.id)
+        updateMeta
+
+    renderEditableRegion regiond =
+      let
+        getOrEmpty key = Maybe.withDefault "" <| Dict.get key regiond
+        editTextCell key attributes =
+          td [ css [ cellStyle ] ]
+            [ input
+              ( [ value <| getOrEmpty key
+                , onInput <| updateMessage key
+                ] ++ attributes )
+              []
+            ]
+
+      in
+        [ td [ css [ cellStyle ] ] [ text <| getOrEmpty "id" ]
+        , editTextCell "name" []
+        , editTextCell "transport_company" []
+        , editTextCell "frequency" []
+        , editTextCell "protocol" []
+        , td [ css [ cellStyle ] ]
+          [ button
+            [ onClick <|
+                let
+                  decoded = regionDictDecoder r.value regiond
+                  newState = if r.value == decoded then Model.Unchanged else Model.Dirty decoded
+                in
+                  metaMessage (\ms -> { ms | state = newState })
+            ] [text "finish"]
           ]
-      Model.Dirty region ->
-        [ td [ css [ cellStyle ] ] [ text <| String.fromInt region.id ]
-        , td [ css [ cellStyle ] ] [ text <| region.name ]
-        , td [ css [ cellStyle ] ] [ text <| region.transport_company ]
-        , td [ css [ cellStyle ] ] [ text <| String.fromInt region.frequency ]
-        , td [ css [ cellStyle ] ] [ text <| region.protocol ]
         ]
-      Model.Unchanged ->
-        let
-          region = r.value
-        in
-          [ td [ css [ cellStyle ] ] [ text <| String.fromInt region.id ]
-          , td [ css [ cellStyle ] ] [ text <| region.name ]
-          , td [ css [ cellStyle ] ] [ text <| region.transport_company ]
-          , td [ css [ cellStyle ] ] [ text <| String.fromInt region.frequency ]
-          , td [ css [ cellStyle ] ] [ text <| region.protocol ]
-          ]
+
+    renderUneditableRegion region dirty =
+      [ td [ css [ cellStyle ] ] [ text <| String.fromInt region.id ]
+      , td [ css [ cellStyle ] ] [ text <| region.name ]
+      , td [ css [ cellStyle ] ] [ text <| region.transport_company ]
+      , td [ css [ cellStyle ] ] [ text <| String.fromInt region.frequency ]
+      , td [ css [ cellStyle ] ] [ text <| region.protocol ]
+      , td [ css [ cellStyle ] ] <|
+        [ button
+          [ onClick <| metaMessage (\ms -> { ms | state = Model.Editing (regionDictEncoder region) })
+          ] [text "edit"]
+        ] ++ if dirty then
+          [ text "(bearbeitet)"
+          , button
+            [ onClick <| Msg.ModifyRegion region ]
+            [ text "senden"]
+          ] else []
+      ]
+  in
+    tr [] <|
+      case r.state of
+        Model.Editing rd ->
+          renderEditableRegion rd
+        Model.Dirty region ->
+          renderUneditableRegion region True
+        Model.Unchanged ->
+          renderUneditableRegion r.value False
 
 renderStations stations =
   div []
@@ -197,10 +239,15 @@ renderStation s =
           ] []
         ]
       , td [ css [ cellStyle ] ] <|
-        [ a
-          [ onClick <| metaMessage (\ms -> { ms | state = Model.Editing (stationDictEncoder ms.value) })
+        [ button
+          [ onClick <| metaMessage (\ms -> { ms | state = Model.Editing (stationDictEncoder station) })
           ] [text "edit"]
-        ] ++ if dirty then [ text "(bearbeitet)" ] else []
+        ] ++ if dirty then
+          [ text "(bearbeitet)"
+          , button
+            [ onClick <| Msg.ModifyStation station ]
+            [ text "senden" ]
+          ] else []
       ]
 
     renderEditableStation stationd =
@@ -231,7 +278,7 @@ renderStation s =
             ] []
           ]
         , td [ css [ cellStyle ] ]
-          [ a
+          [ button
             [ onClick <|
                 let
                   decoded = stationDictDecoder s.value stationd

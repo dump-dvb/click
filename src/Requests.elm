@@ -18,7 +18,7 @@ performRequest r model =
                   """
             |> WebSocket.send cmdPort
       in
-        ({ model | expect = expector regionListDecoder storeRegions }, cmd)
+        ({ model | expect = expector regionListDecoder storeNewRegions }, cmd)
 
     Msg.ListStations ->
       let
@@ -31,9 +31,13 @@ performRequest r model =
       in
         ({ model | expect = expector stationListDecoder storeNewStations }, cmd)
 
-storeRegions: Model -> List Region -> Model
+storeNewRegions: Model -> List Region -> Model
+storeNewRegions model rl =
+  storeRegions model <| List.map makeModifyable rl
+
+storeRegions: Model -> List (Model.Modifyable Region) -> Model
 storeRegions model rl =
-  { model | regions = List.map makeModifyable rl }
+  { model | regions = rl }
 
 storeNewStations: Model -> List Station -> Model
 storeNewStations model st =

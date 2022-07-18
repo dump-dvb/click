@@ -25,7 +25,7 @@ import Requests exposing (performRequest)
 import Config exposing (socketKey, socketURL)
 import Model exposing (Model, expector)
 
-import Serialization exposing (successDecoder)
+import Serialization exposing (successDecoder, regionEncoder, stationEncoder)
 
 
 main =
@@ -158,6 +158,51 @@ update msg model =
       in
         { model | expect = expect } |> withCmd cmd
 
+    Msg.ModifyRegion r ->
+      let
+          request = Encode.encode 0
+                <| Encode.object
+                   [ ("operation", Encode.string "region/modify")
+                   , ("body", regionEncoder r )
+                   ]
+          cmd = WebSocket.makeSend socketKey request
+            |> WebSocket.send cmdPort
+      in
+        { model
+        | expect = expector (Decode.decodeString successDecoder)
+          (\m { success } ->
+            if not success then m else
+            { m
+            | regions = List.map
+                        (\reg -> if reg.value.id /= r.id then reg
+                                 else { reg | value = r, state = Model.Unchanged })
+                        model.regions
+            }
+          )
+        } |> withCmd cmd
+
+    Msg.ModifyStation s ->
+      let
+          request = Encode.encode 0
+                <| Encode.object
+                   [ ("operation", Encode.string "station/modify")
+                   , ("body", stationEncoder s )
+                   ]
+          cmd = WebSocket.makeSend socketKey request
+            |> WebSocket.send cmdPort
+      in
+        { model
+        | expect = expector (Decode.decodeString successDecoder)
+          (\m { success } ->
+            if not success then m else
+            { m
+            | stations = List.map
+                         (\st -> if st.value.id /= s.id then st
+                                 else { st | value = s, state = Model.Unchanged })
+                         model.stations
+            }
+          )
+        } |> withCmd cmd
 
     Msg.Request r ->
       performRequest r model

@@ -1,5 +1,6 @@
 module Serialization exposing (..)
 
+import Json.Encode as Encode exposing (..)
 import Json.Decode as Decode exposing (..)
 import Json.Decode.Pipeline as JDPipeline exposing (optional, required)
 
@@ -37,6 +38,41 @@ regionDecoder =
     |> required "frequency" Decode.int
     |> required "protocol" Decode.string
 
+regionEncoder region =
+  Encode.object
+    [ ("id", Encode.int region.id)
+    , ("name", Encode.string region.name)
+    , ("transport_company", Encode.string region.transport_company)
+    , ("frequency", Encode.int region.frequency)
+    , ("protocol", Encode.string region.protocol)
+    ]
+
+regionDictEncoder region =
+  Dict.fromList
+    [ ("id", String.fromInt region.id)
+    , ("name", region.name)
+    , ("transport_company", region.transport_company)
+    , ("frequency", String.fromInt region.frequency)
+    , ("protocol", region.protocol)
+    ]
+
+regionDictDecoder: Region -> (Dict String String) -> Region
+regionDictDecoder default dict =
+  let
+    nothingIfEmpty str = if String.isEmpty <| String.trim str then Nothing else Just str
+    toBool str = if str == "true" then Just True else Just False
+    getParse parse key accessor =
+      Dict.get key dict
+      |> Maybe.andThen parse
+      |> Maybe.withDefault (accessor default)
+    get key accessor = getParse nothingIfEmpty key accessor
+  in
+    { id = getParse String.toInt "id" .id
+    , name = get "name" .name
+    , transport_company = get "transport_company" .transport_company
+    , frequency = getParse String.toInt "frequency" .frequency
+    , protocol = get "protocol" .protocol
+    }
 
 -- Station
 
@@ -64,6 +100,19 @@ stationDecoder =
     |> required "region" Decode.int
     |> required "owner" Decode.string
     |> required "approved" Decode.bool
+
+stationEncoder: Station -> Encode.Value
+stationEncoder station =
+  Encode.object
+    [ ("id", Encode.string station.id)
+    , ("token", Encode.string <| Maybe.withDefault "" station.token)
+    , ("name", Encode.string station.name)
+    , ("lat", Encode.float station.lat)
+    , ("lon", Encode.float station.lon)
+    , ("region", Encode.int station.region)
+    , ("owner", Encode.string station.owner)
+    , ("approved", Encode.bool station.approved)
+    ]
 
 stationDictEncoder station =
   Dict.fromList
