@@ -4,8 +4,9 @@ import Msg exposing (Msg)
 
 import Browser
 
-import Html.Styled as Html exposing (Html, button, div, text, br, p, table, thead, tbody, th, tr, td, h3)
-import Html.Styled.Events exposing (onClick)
+import Html.Styled.Attributes exposing (type_)
+import Html.Styled as Html exposing (Html, button, div, text, br, p, table, thead, tbody, th, tr, td, h3, label, input)
+import Html.Styled.Events exposing (onClick, onInput)
 
 import Render exposing (renderPanel)
 
@@ -24,6 +25,8 @@ import Requests exposing (performRequest)
 import Config exposing (socketKey, socketURL)
 import Model exposing (Model, expector)
 
+import Serialization exposing (successDecoder)
+
 
 main =
   Browser.element
@@ -37,6 +40,9 @@ init: () -> ( Model, Cmd Msg )
 init _ =
   { websocket = WebSocket.initialState
   , isConnected = False
+  , username = ""
+  , password = ""
+  , loggedIn = False
   , regions = []
   , stations = []
   , expect = Nothing
@@ -97,7 +103,7 @@ update msg model =
           { newmodel | isConnected = True } |> withNoCmd
 
         Ok (newmodel, WebSocket.ClosedResponse ms) ->
-          { newmodel | isConnected = False } |> withNoCmd
+          { newmodel | isConnected = False, loggedIn = False } |> withNoCmd
 
         Ok (newmodel, WebSocket.CmdResponse ms) ->
           newmodel |> withCmd (WebSocket.send cmdPort ms)
@@ -122,20 +128,36 @@ update msg model =
       in
         (model, cmd)
 
+    Msg.SetUsername username ->
+      { model | username = username } |> withNoCmd
+
+    Msg.SetPassword password ->
+      { model | password = password } |> withNoCmd
+
     Msg.Login ->
       let
-          cmd = WebSocket.makeSend socketKey """
-                  {
-                      "operation": "user/login",
-                      "body": {
-                          "name": "test",
-                          "password": "test"
-                      }
-                  }
-                  """
+          request = Encode.encode 0
+                <| Encode.object
+                   [ ("operation", Encode.string "user/login")
+                   , ("body",
+                       Encode.object
+                       [ ("name", Encode.string model.username)
+                       , ("password", Encode.string model.password)
+                       ]
+                     )
+                   ]
+          cmd = WebSocket.makeSend socketKey request
             |> WebSocket.send cmdPort
+          expect = expector
+            (Decode.decodeString successDecoder)
+            (\m { success } ->
+              { m
+              | loggedIn = success
+              , password = if success then model.password else ""
+              })
       in
-        (model, cmd)
+        { model | expect = expect } |> withCmd cmd
+
 
     Msg.Request r ->
       performRequest r model
@@ -152,8 +174,22 @@ view model =
       then
         [ button [ onClick Msg.Connect ] [ text "Connect" ] ]
       else
-        [ button [ onClick Msg.Login ] [ text "Login" ]
-        , br [] []
+        (
+          if model.loggedIn
+          then
+            [ text <| "Logged in as " ++ model.username ]
+          else
+            [ label [] [ text "Username: " ]
+            , input [ onInput (\username -> Msg.SetUsername username) ] []
+            , label [] [ text " Password: " ]
+            , input
+              [ onInput (\password -> Msg.SetPassword password)
+              , type_ "password"
+              ] []
+            , button [ onClick Msg.Login ] [ text "Login" ]
+            ]
+        ) ++
+        [ br [] []
         , div [] <| renderPanel model
         ]
     )

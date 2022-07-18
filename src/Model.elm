@@ -10,6 +10,9 @@ import Dict exposing (Dict)
 type alias Model =
   { websocket: WebSocket.State
   , isConnected: Bool
+  , username: String
+  , password: String
+  , loggedIn: Bool
   , regions: List (Modifyable Region)
   , stations: List (Modifyable Station)
   , expect: Maybe Expector

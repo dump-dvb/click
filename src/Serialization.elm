@@ -5,6 +5,17 @@ import Json.Decode.Pipeline as JDPipeline exposing (optional, required)
 
 import Dict exposing (Dict)
 
+-- Success
+
+type alias SuccessResponse =
+  { success: Bool
+  }
+
+successDecoder: Decode.Decoder SuccessResponse
+successDecoder =
+  Decode.succeed SuccessResponse
+    |> required "success" Decode.bool
+
 -- Region
 
 type alias Region =

@@ -7,6 +7,8 @@ type RequestType = ListRegions | ListStations
 
 type Msg =
     Connect
+  | SetUsername String
+  | SetPassword String
   | Login
   | Request RequestType
   | UpdateData (Model -> Model)
