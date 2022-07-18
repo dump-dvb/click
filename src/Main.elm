@@ -74,16 +74,16 @@ update msg model =
   case msg of
     Msg.Process value ->
       let
-        logIncoming = Debug.log "incoming to-process" <| Encode.encode 0 value
+        logIncoming = Encode.encode 0 value |> Debug.log "incoming to-process"
         result = PortFunnel.decodeGenericMessage value
           |> Result.andThen (\gmessage ->
                PortFunnel.process stateAccessor WebSocket.moduleDesc gmessage model
              )
         logResponse = case result of
           Ok (_, response) ->
-            Debug.log "response" (parseResponse response)
+            parseResponse response |> Debug.log "response"
           Err s ->
-            "cannot decode message: " ++ s
+            s |> Debug.log "error decoding response"
       in case result of
         Ok (newmodel, WebSocket.NoResponse) ->
           -- connect upon startup
